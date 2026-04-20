@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🛒 SmartMart — Supermarket Management</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ── Reset & Variables ── */
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#070C18;--surface:#0E1524;--card:#162035;--card2:#1C2A42;
+  --border:#253550;--border2:#2E4268;
+  --accent:#00F5A0;--accent2:#0EA5E9;--purple:#A855F7;
+  --warning:#F59E0B;--danger:#EF4444;--success:#10B981;
+  --text:#E2EBF8;--text2:#8BA4C8;--text3:#4A6080;
+  --sidebar:230px;
+}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;overflow:hidden}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--surface)}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* ── Sidebar ── */
+#sidebar{width:var(--sidebar);min-height:100vh;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.brand{padding:20px 18px;border-bottom:1px solid var(--border)}
+.brand h1{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--accent);letter-spacing:-.5px}
+.brand p{font-size:10px;color:var(--text3);margin-top:2px;font-family:'JetBrains Mono',monospace}
+.conn-pill{display:inline-flex;align-items:center;gap:5px;margin-top:8px;padding:4px 10px;border-radius:20px;background:var(--card2);font-size:11px;border:1px solid var(--border)}
+.conn-dot{width:7px;height:7px;border-radius:50%;background:var(--danger);transition:background .3s}
+.conn-dot.on{background:var(--accent)}
+nav{flex:1;padding:10px 0}
+.nav-sec{padding:8px 16px 4px;font-size:9.5px;font-weight:700;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 18px;cursor:pointer;transition:all .2s;color:var(--text2);font-size:13px;border-left:2px solid transparent}
+.nav-item:hover{background:rgba(0,245,160,.05);color:var(--text)}
+.nav-item.active{background:rgba(0,245,160,.1);color:var(--accent);border-left-color:var(--accent)}
+.nav-icon{font-size:15px;width:20px;text-align:center}
+
+/* ── Main Area ── */
+#main{flex:1;overflow-y:auto;height:100vh}
+.page{display:none;padding:26px 30px;min-height:100vh}
+.page.active{display:block}
+.page-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+.page-title{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;letter-spacing:-.5px}
+.page-sub{font-size:12px;color:var(--text3);margin-top:2px}
+
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:8px;border:none;cursor:pointer;font-family:'Outfit',sans-serif;font-size:13px;font-weight:500;transition:all .2s}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-primary{background:var(--accent);color:#04180E}
+.btn-primary:hover:not(:disabled){background:#00FFB0;transform:translateY(-1px)}
+.btn-secondary{background:transparent;color:var(--text2);border:1px solid var(--border2)}
+.btn-secondary:hover{background:var(--card);color:var(--text)}
+.btn-danger{background:rgba(239,68,68,.1);color:var(--danger);border:1px solid rgba(239,68,68,.3)}
+.btn-sm{padding:6px 12px;font-size:12px}
+.icon-btn{padding:7px;border-radius:6px;background:var(--card2);border:1px solid var(--border);color:var(--text2);cursor:pointer;transition:all .2s;font-size:13px}
+.icon-btn:hover{color:var(--accent);border-color:var(--accent)}
+
+/* ── Table ── */
+.tbl-wrap{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.tbl-bar{padding:13px 18px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.search{display:flex;align-items:center;gap:8px;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:7px 12px;flex:1;max-width:280px}
+.search input{background:none;border:none;color:var(--text);font-family:'Outfit',sans-serif;font-size:13px;outline:none;width:100%}
+.search input::placeholder{color:var(--text3)}
+table{width:100%;border-collapse:collapse}
+thead tr{background:var(--card2)}
+th{padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;white-space:nowrap}
+td{padding:12px 14px;font-size:13px;border-bottom:1px solid var(--border);color:var(--text2)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:600}
+.badge-green{background:rgba(0,245,160,.12);color:var(--accent)}
+.badge-blue{background:rgba(14,165,233,.12);color:var(--accent2)}
+.badge-red{background:rgba(239,68,68,.12);color:var(--danger)}
+.badge-warn{background:rgba(245,158,11,.12);color:var(--warning)}
+.mono{font-family:'JetBrains Mono',monospace;font-size:12px}
+.empty{text-align:center;padding:50px;color:var(--text3)}
+.empty-ico{font-size:36px;margin-bottom:10px;opacity:.3}
+
+/* ── Stats ── */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;position:relative;overflow:hidden}
+.stat::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.stat.g::before{background:var(--accent)}.stat.b::before{background:var(--accent2)}
+.stat.p::before{background:var(--purple)}.stat.w::before{background:var(--warning)}
+.stat-lbl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;font-weight:700;margin-bottom:6px}
+.stat-val{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:500}
+.stat-val.g{color:var(--accent)}.stat-val.b{color:var(--accent2)}
+.stat-val.p{color:var(--purple)}.stat-val.w{color:var(--warning)}
+
+/* ── Modal ── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:1000;align-items:center;justify-content:center;padding:20px}
+.overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:16px;width:100%;max-width:660px;max-height:90vh;overflow-y:auto}
+.modal-lg{max-width:860px}
+.modal-hdr{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-family:'Syne',sans-serif;font-size:17px;font-weight:700}
+.modal-close{background:var(--card2);border:1px solid var(--border);border-radius:7px;color:var(--text2);width:30px;height:30px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
+.modal-close:hover{color:var(--danger);border-color:var(--danger)}
+.modal-body{padding:22px}
+.modal-foot{padding:14px 22px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end}
+
+/* ── Forms ── */
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.fg3{grid-template-columns:1fr 1fr 1fr}
+.fitem{display:flex;flex-direction:column;gap:5px}
+.fitem.full{grid-column:1/-1}
+label{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px}
+input,select,textarea{background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Outfit',sans-serif;font-size:13px;padding:9px 13px;outline:none;transition:all .2s;width:100%}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,245,160,.1)}
+input::placeholder{color:var(--text3)}
+select option{background:var(--surface)}
+
+/* ── Items Grid ── */
+.items-tbl{width:100%;border-collapse:collapse;margin-top:10px}
+.items-tbl th{background:var(--card2);padding:7px 9px;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;text-align:left}
+.items-tbl td{padding:5px 5px;border-bottom:1px solid var(--border)}
+.items-tbl td input,.items-tbl td select{padding:7px 9px;font-size:12px}
+.add-row{display:flex;align-items:center;gap:6px;padding:8px 14px;background:rgba(0,245,160,.06);border:1px dashed rgba(0,245,160,.3);border-radius:8px;color:var(--accent);font-size:12px;cursor:pointer;margin-top:10px;width:100%;justify-content:center;transition:all .2s}
+.add-row:hover{background:rgba(0,245,160,.12)}
+.rem-row{background:none;border:none;color:var(--danger);cursor:pointer;padding:4px;font-size:13px;opacity:.6}
+.rem-row:hover{opacity:1}
+
+/* ── Status Box ── */
+.status-box{padding:10px 14px;border-radius:8px;font-size:13px;margin-top:12px;display:none}
+.status-box.info{background:rgba(14,165,233,.1);border:1px solid rgba(14,165,233,.3);color:var(--accent2)}
+.status-box.ok{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:var(--success)}
+.status-box.err{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:var(--danger)}
+
+/* ── Loading Overlay ── */
+#loader{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:2000;display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px}
+#loader.show{display:flex}
+.spin{width:34px;height:34px;border:3px solid rgba(0,245,160,.2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loader-txt{color:var(--text2);font-size:13px;font-family:'JetBrains Mono',monospace}
+
+/* ── Toast ── */
+#toasts{position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+.toast{padding:11px 16px;border-radius:9px;font-size:13px;font-weight:500;min-width:240px;animation:toastIn .3s ease;display:flex;align-items:center;gap:8px;box-shadow:0 4px 20px rgba(0,0,0,.4)}
+.toast.ok{background:#10B981;color:#fff}
+.toast.err{background:#EF4444;color:#fff}
+.toast.info{background:#0EA5E9;color:#fff}
+.toast.warn{background:#F59E0B;color:#000}
+@keyframes toastIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* ── Dashboard Hero ── */
+.hero{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:20px;background-image:linear-gradient(135deg,rgba(0,245,160,.05),transparent 60%)}
+.hero h2{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;letter-spacing:-1px}
+.hero h2 span{color:var(--accent)}
+.hero p{color:var(--text3);font-size:13px;margin-top:6px}
+
+/* ── Quick Actions ── */
+.qa-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+.qa{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;cursor:pointer;transition:all .2s;text-align:center}
+.qa:hover{border-color:var(--accent);transform:translateY(-2px);background:rgba(0,245,160,.04)}
+.qa-icon{font-size:26px;margin-bottom:7px}
+.qa-lbl{font-size:12px;font-weight:600;color:var(--text2)}
+
+/* ── Delete Confirm ── */
+#del-name{font-weight:700;color:var(--text)}
+</style>
+</head>
+<body>
+
+<!-- Loading -->
+<div id="loader"><div class="spin"></div><div id="loader-txt">Loading...</div></div>
+
+<!-- Sidebar -->
+<div id="sidebar">
+  <div class="brand">
+    <h1>🛒 SmartMart</h1>
+    <p>Zoho Creator Connected</p>
+    <div class="conn-pill">
+      <div class="conn-dot" id="conn-dot"></div>
+      <span id="conn-lbl">Checking...</span>
+    </div>
+  </div>
+  <nav>
+    <div class="nav-sec">Main</div>
+    <div class="nav-item active" onclick="go('dashboard')"><span class="nav-icon">📊</span><span>Dashboard</span></div>
+    <div class="nav-sec">Inventory</div>
+    <div class="nav-item" onclick="go('products')"><span class="nav-icon">📦</span><span>Products</span></div>
+    <div class="nav-item" onclick="go('purchase')"><span class="nav-icon">🛍️</span><span>Purchase</span></div>
+    <div class="nav-sec">Sales</div>
+    <div class="nav-item" onclick="go('sales')"><span class="nav-icon">💰</span><span>Sales</span></div>
+    <div class="nav-item" onclick="go('customers')"><span class="nav-icon">👥</span><span>Customers</span></div>
+    <div class="nav-sec">Master</div>
+    <div class="nav-item" onclick="go('suppliers')"><span class="nav-icon">🚚</span><span>Suppliers</span></div>
+  </nav>
+</div>
+
+<!-- Main -->
+<div id="main">
+
+<!-- ══ DASHBOARD ══ -->
+<div id="page-dashboard" class="page active">
+  <div class="hero">
+    <h2>Welcome to <span>Joe's Supermarket</span> 🛒</h2>
+    <p>Chennai, Tamil Nadu — Connected to Zoho Creator</p>
+  </div>
+  <div class="stats">
+    <div class="stat g"><div class="stat-lbl">Total Products</div><div class="stat-val g" id="d-prod">—</div></div>
+    <div class="stat b"><div class="stat-lbl">Total Customers</div><div class="stat-val b" id="d-cust">—</div></div>
+    <div class="stat p"><div class="stat-lbl">Total Suppliers</div><div class="stat-val p" id="d-supp">—</div></div>
+    <div class="stat w"><div class="stat-lbl">Total Sales</div><div class="stat-val w" id="d-sale">—</div></div>
+  </div>
+  <div class="qa-grid">
+    <div class="qa" onclick="go('products');setTimeout(openProductModal,300)"><div class="qa-icon">📦</div><div class="qa-lbl">Add Product</div></div>
+    <div class="qa" onclick="go('sales');setTimeout(openSalesModal,300)"><div class="qa-icon">💰</div><div class="qa-lbl">New Sale</div></div>
+    <div class="qa" onclick="go('purchase');setTimeout(openPurchaseModal,300)"><div class="qa-icon">🛍️</div><div class="qa-lbl">New Purchase</div></div>
+    <div class="qa" onclick="go('customers');setTimeout(openCustomerModal,300)"><div class="qa-icon">👤</div><div class="qa-lbl">Add Customer</div></div>
+  </div>
+  <div class="tbl-wrap">
+    <div class="tbl-bar"><span style="font-weight:600;font-size:13px">📦 Recent Products (from Zoho)</span></div>
+    <table><thead><tr><th>ID</th><th>Category</th><th>Brand</th><th>Product</th><th>Sell Price</th><th>Stock</th></tr></thead>
+    <tbody id="dash-tbl"></tbody></table>
+  </div>
+</div>
+
+<!-- ══ PRODUCTS ══ -->
+<div id="page-products" class="page">
+  <div class="page-hdr">
+    <div><div class="page-title">📦 Products</div><div class="page-sub">Zoho Creator → Product_Form</div></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-secondary btn-sm" onclick="loadProducts()">🔄 Refresh</button>
+      <button class="btn btn-primary" onclick="openProductModal()">+ Add Product</button>
+    </div>
+  </div>
+  <div class="tbl-wrap">
+    <div class="tbl-bar">
+      <div class="search">🔍 <input placeholder="Search products..." oninput="filterProducts(this.value)"></div>
+    </div>
+    <table><thead><tr><th>ID</th><th>Category</th><th>Brand</th><th>Product Name</th><th>Cost (₹)</th><th>Sell (₹)</th><th>Stock</th><th>Reorder</th><th>Actions</th></tr></thead>
+    <tbody id="prod-tbl"></tbody></table>
+  </div>
+</div>
+
+<!-- ══ PURCHASE ══ -->
+<div id="page-purchase" class="page">
+  <div class="page-hdr">
+    <div><div class="page-title">🛍️ Purchase Orders</div><div class="page-sub">Zoho Creator → PURCHASE_FORM</div></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-secondary btn-sm" onclick="loadPurchases()">🔄 Refresh</button>
+      <button class="btn btn-primary" onclick="openPurchaseModal()">+ New Purchase</button>
+    </div>
+  </div>
+  <div class="tbl-wrap">
+    <div class="tbl-bar"><div class="search">🔍 <input placeholder="Search..."></div></div>
+    <table><thead><tr><th>Purchase ID</th><th>Supplier</th><th>Date</th><th>Total (₹)</th><th>Payment</th><th>Actions</th></tr></thead>
+    <tbody id="pu-tbl"></tbody></table>
+  </div>
+</div>
+
+<!-- ══ SALES ══ -->
+<div id="page-sales" class="page">
+  <div class="page-hdr">
+    <div><div class="page-title">💰 Sales</div><div class="page-sub">Zoho Creator → SALES_FORM</div></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-secondary btn-sm" onclick="loadSales()">🔄 Refresh</button>
+      <button class="btn btn-primary" onclick="openSalesModal()">+ New Sale</button>
+    </div>
+  </div>
+  <div class="tbl-wrap">
+    <div class="tbl-bar"><div class="search">🔍 <input placeholder="Search..."></div></div>
+    <table><thead><tr><th>Bill ID</th><th>Customer</th><th>Date</th><th>Total</th><th>Discount</th><th>Grand Total</th><th>Payment</th><th>Status</th><th>Actions</th></tr></thead>
+    <tbody id="sl-tbl"></tbody></table>
+  </div>
+</div>
+
+<!-- ══ CUSTOMERS ══ -->
+<div id="page-customers" class="page">
+  <div class="page-hdr">
+    <div><div class="page-title">👥 Customers</div><div class="page-sub">Zoho Creator → CUSTOMER_FORM</div></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-secondary btn-sm" onclick="loadCustomers()">🔄 Refresh</button>
+      <button class="btn btn-primary" onclick="openCustomerModal()">+ Add Customer</button>
+    </div>
+  </div>
+  <div class="tbl-wrap">
+    <div class="tbl-bar"><div class="search">🔍 <input placeholder="Search..."></div></div>
+    <table><thead><tr><th>ID</th><th>Customer Name</th><th>Phone</th><th>Actions</th></tr></thead>
+    <tbody id="cust-tbl"></tbody></table>
+  </div>
+</div>
+
+<!-- ══ SUPPLIERS ══ -->
+<div id="page-suppliers" class="page">
+  <div class="page-hdr">
+    <div><div class="page-title">🚚 Suppliers</div><div class="page-sub">Zoho Creator → SUPPLIER_FORM</div></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-secondary btn-sm" onclick="loadSuppliers()">🔄 Refresh</button>
+      <button class="btn btn-primary" onclick="openSupplierModal()">+ Add Supplier</button>
+    </div>
+  </div>
+  <div class="tbl-wrap">
+    <div class="tbl-bar"><div class="search">🔍 <input placeholder="Search..."></div></div>
+    <table><thead><tr><th>ID</th><th>Supplier Name</th><th>City</th><th>State</th><th>Actions</th></tr></thead>
+    <tbody id="supp-tbl"></tbody></table>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<!-- ══ PRODUCT MODAL ══ -->
+<div class="overlay" id="m-product">
+<div class="modal">
+  <div class="modal-hdr"><span class="modal-title" id="pm-title">Add Product</span><button class="modal-close" onclick="closeModal('m-product')">✕</button></div>
+  <div class="modal-body">
+    <div class="fg">
+      <div class="fitem"><label>Category 📂</label>
+        <select id="p-cat" onchange="onCatChange()">
+          <option value="">Select</option>
+          <option>Rice</option><option>Biscuits</option><option>Milk</option><option>Chips</option>
+          <option>Cooking Oil</option><option>Cool Drinks</option><option>Hair Oil</option>
+          <option>Vegetables</option><option>Fruits</option><option>Flour</option>
+          <option>Stationery</option><option>Pulses</option><option>Men Beauty</option>
+        </select>
+      </div>
+      <div class="fitem"><label>Brand 🏷️</label><select id="p-brand" onchange="onBrandChange()"><option value="">Select Brand</option></select></div>
+      <div class="fitem"><label>Product Name 🍊</label><select id="p-name"><option value="">Select Product</option></select></div>
+      <div class="fitem"><label>Cost Price 💵 (₹)</label><input type="number" id="p-cost" placeholder="0.00" min="0" step="0.01"></div>
+      <div class="fitem"><label>Selling Price 💲 (₹)</label><input type="number" id="p-sell" placeholder="0.00" min="0" step="0.01"></div>
+      <div class="fitem"><label>Stock Quantity 🗃️</label><input type="number" id="p-stock" placeholder="0" min="0"></div>
+      <div class="fitem"><label>Reorder Level</label><input type="number" id="p-reorder" placeholder="10" min="0"></div>
+    </div>
+    <div class="status-box" id="pm-status"></div>
+  </div>
+  <div class="modal-foot">
+    <button class="btn btn-secondary" onclick="closeModal('m-product')">Cancel</button>
+    <button class="btn btn-primary" id="pm-btn" onclick="saveProduct()">📤 Save to Zoho Creator</button>
+  </div>
+</div></div>
+
+<!-- ══ CUSTOMER MODAL ══ -->
+<div class="overlay" id="m-customer">
+<div class="modal" style="max-width:460px">
+  <div class="modal-hdr"><span class="modal-title">Add Customer</span><button class="modal-close" onclick="closeModal('m-customer')">✕</button></div>
+  <div class="modal-body">
+    <div class="fg">
+      <div class="fitem full"><label>Customer Name</label><input id="c-name" placeholder="Full name"></div>
+      <div class="fitem full"><label>Phone</label><input id="c-phone" type="tel" placeholder="+91 9999999999"></div>
+    </div>
+  </div>
+  <div class="modal-foot"><button class="btn btn-secondary" onclick="closeModal('m-customer')">Cancel</button><button class="btn btn-primary" onclick="saveCustomer()">📤 Save to Zoho</button></div>
+</div></div>
+
+<!-- ══ SUPPLIER MODAL ══ -->
+<div class="overlay" id="m-supplier">
+<div class="modal">
+  <div class="modal-hdr"><span class="modal-title">Add Supplier</span><button class="modal-close" onclick="closeModal('m-supplier')">✕</button></div>
+  <div class="modal-body">
+    <div class="fg">
+      <div class="fitem"><label>Supplier Name</label><input id="s-name" placeholder="Name"></div>
+      <div class="fitem"><label>Phone</label><input id="s-phone" type="tel" placeholder="+91..."></div>
+      <div class="fitem full"><label>Address Line 1</label><input id="s-addr" placeholder="Street / Area"></div>
+      <div class="fitem"><label>City</label><input id="s-city" placeholder="Chennai"></div>
+      <div class="fitem"><label>State</label><input id="s-state" placeholder="Tamil Nadu"></div>
+    </div>
+  </div>
+  <div class="modal-foot"><button class="btn btn-secondary" onclick="closeModal('m-supplier')">Cancel</button><button class="btn btn-primary" onclick="saveSupplier()">📤 Save to Zoho</button></div>
+</div></div>
+
+<!-- ══ PURCHASE MODAL ══ -->
+<div class="overlay" id="m-purchase">
+<div class="modal modal-lg">
+  <div class="modal-hdr"><span class="modal-title">New Purchase Order</span><button class="modal-close" onclick="closeModal('m-purchase')">✕</button></div>
+  <div class="modal-body">
+    <div class="fg fg3">
+      <div class="fitem"><label>Supplier</label><select id="pu-sup"><option value="">Select Supplier</option></select></div>
+      <div class="fitem"><label>Purchase Date</label><input type="date" id="pu-date"></div>
+      <div class="fitem"><label>Payment Method 🏧</label>
+        <select id="pu-pay"><option>UPI 💳</option><option>Cash 💵</option><option>Net Banking 💱</option></select>
+      </div>
+    </div>
+    <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;padding-bottom:6px;border-bottom:1px solid var(--border);margin-top:14px">Purchase Items 🛍️</div>
+    <table class="items-tbl">
+      <thead><tr><th>Product 🥕</th><th>Quantity 💎</th><th>Cost Price 💵 (₹)</th><th>Total 💱 (₹)</th><th></th></tr></thead>
+      <tbody id="pu-rows"></tbody>
+    </table>
+    <button class="add-row" onclick="addPuRow()">＋ Add Item</button>
+    <div style="display:flex;justify-content:flex-end;margin-top:14px">
+      <div style="background:var(--card2);border:1px solid var(--border);border-radius:9px;padding:13px 18px;text-align:right;min-width:190px">
+        <div style="font-size:10px;color:var(--text3);margin-bottom:4px">TOTAL AMOUNT 💲</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:20px;color:var(--accent)">₹<span id="pu-total">0.00</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-foot"><button class="btn btn-secondary" onclick="closeModal('m-purchase')">Cancel</button><button class="btn btn-primary" onclick="savePurchase()">📤 Save to Zoho</button></div>
+</div></div>
+
+<!-- ══ SALES MODAL ══ -->
+<div class="overlay" id="m-sales">
+<div class="modal modal-lg">
+  <div class="modal-hdr"><span class="modal-title">New Sale</span><button class="modal-close" onclick="closeModal('m-sales')">✕</button></div>
+  <div class="modal-body">
+    <div class="fg fg3">
+      <div class="fitem"><label>Customer 👥</label><select id="sl-cust"><option value="">Walk-in Customer</option></select></div>
+      <div class="fitem"><label>Date 📅</label><input type="date" id="sl-date"></div>
+      <div class="fitem"><label>Payment Method 🏧</label>
+        <select id="sl-pay"><option>UPI 💳</option><option>Cash 💵</option><option>Net Banking 🏦</option></select>
+      </div>
+    </div>
+    <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;padding-bottom:6px;border-bottom:1px solid var(--border);margin-top:14px">Sales Items 👜</div>
+    <table class="items-tbl">
+      <thead><tr><th>Product 🥕</th><th>Qty 🍎</th><th>Selling Price 💲 (₹)</th><th>Total ☯️ (₹)</th><th></th></tr></thead>
+      <tbody id="sl-rows"></tbody>
+    </table>
+    <button class="add-row" onclick="addSlRow()">＋ Add Item</button>
+    <div style="display:flex;justify-content:flex-end;margin-top:14px">
+      <div style="background:var(--card2);border:1px solid var(--border);border-radius:9px;padding:13px 18px;min-width:250px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:7px"><span>Subtotal</span><span>₹<span id="sl-sub">0.00</span></span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--text2);margin-bottom:7px">
+          <span>Discount 🈹 (₹)</span>
+          <input type="number" id="sl-disc" style="width:75px;padding:4px 8px" value="0" min="0" oninput="calcSales()">
+        </div>
+        <div style="border-top:1px solid var(--border);padding-top:9px;display:flex;justify-content:space-between">
+          <span style="font-weight:600">Grand Total</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:18px;color:var(--accent)">₹<span id="sl-grand">0.00</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-foot"><button class="btn btn-secondary" onclick="closeModal('m-sales')">Cancel</button><button class="btn btn-primary" onclick="saveSale()">📤 Create Bill in Zoho</button></div>
+</div></div>
+
+<!-- ══ DELETE CONFIRM ══ -->
+<div class="overlay" id="m-del">
+<div class="modal" style="max-width:380px">
+  <div class="modal-hdr"><span class="modal-title" style="color:var(--danger)">⚠️ Delete</span><button class="modal-close" onclick="closeModal('m-del')">✕</button></div>
+  <div class="modal-body"><p style="font-size:14px;color:var(--text2)">Zoho Creator-ல் இருந்து <span id="del-name">இந்த record</span>-ஐ delete பண்ணவா?</p></div>
+  <div class="modal-foot"><button class="btn btn-secondary" onclick="closeModal('m-del')">Cancel</button><button class="btn btn-danger" onclick="doDelete()">Delete ✕</button></div>
+</div></div>
+
+<div id="toasts"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  SmartMart Frontend — calls our local server.js API
+//  API Base: /api  (same origin, no CORS issues!)
+// ═══════════════════════════════════════════════════════════
+
+// ── API Base (points to server.js) ──────────────────────────
+const API = '';  // same origin, so just /api/...
+
+// ── Cache ────────────────────────────────────────────────────
+const CACHE = { products: [], customers: [], suppliers: [] };
+
+// ── Brand / Product Maps ─────────────────────────────────────
+const BRAND_MAP = {
+  Rice:['India Gate','Fortune','Aashirvaad','Ponni','Rathna','Annam'],
+  Biscuits:['Britannia','Parle','Sunfeast'],Milk:['Amul','Aavin','Arokya'],
+  Chips:['Lays','Kurkure','Bingo','Haldiram'],'Cooking Oil':['Fortune','Saffola','Gold Winner'],
+  'Cool Drinks':['Coca-Cola','Pepsi','Sprite','Fanta'],'Hair Oil':['Parachute','Dabur'],
+  Vegetables:['Local'],Fruits:['Local'],Flour:['Aashirvaad','Annapurna','Nature Fresh','Anil'],
+  Stationery:['Classmate','Camlin','Nataraj','Apsara','Reynolds','Cello','Flair'],
+  Pulses:['Aashirvaad','Fortune','Annapurna'],'Men Beauty':['Gillette','Axe','Fogg']
+};
+const PROD_MAP = {
+  'India Gate':['Basmati Rice'],'Fortune':['Sunflower Oil','Rice Bran Oil','Dal'],
+  'Aashirvaad':['Atta','Dal'],'Ponni':['Ponni Rice'],'Rathna':['Rathna Rice'],'Annam':['Annam Rice'],
+  'Britannia':['Good Day','Marie Gold','Little Hearts'],'Parle':['Parle-G','Hide & Seek'],
+  'Sunfeast':['Dark Fantasy','Marie Light'],'Amul':['Milk','Butter','Cheese','Ice Cream'],
+  'Aavin':['Milk','Curd','Ghee'],'Arokya':['Milk','Curd'],
+  'Lays':['Classic Salted','Magic Masala','Cream & Onion'],
+  'Kurkure':['Masala Munch','Green Chutney','Chilli Chatka'],
+  'Bingo':['Mad Angles','Tedhe Medhe'],'Haldiram':['Aloo Bhujia','Mixture'],
+  'Coca-Cola':['Coke 250ml','Coke 500ml','Coke 1L'],'Pepsi':['Pepsi 250ml','Pepsi 500ml'],
+  'Sprite':['Sprite 250ml','Sprite 500ml'],'Fanta':['Fanta Orange','Fanta Apple'],
+  'Saffola':['Gold Oil','Active Oil'],'Gold Winner':['Refined Oil'],
+  'Parachute':['Coconut Oil'],'Dabur':['Amla Hair Oil'],'Local':['Fresh Items'],
+  'Annapurna':['Atta'],'Anil':['Atta'],'Nature Fresh':['Atta'],
+  'Classmate':['Notebook'],'Nataraj':['Pencil'],'Reynolds':['Pen'],
+  'Camlin':['Colors'],'Apsara':['Pencil'],'Cello':['Pen'],'Flair':['Pen'],
+  'Gillette':['Razor','Shaving Gel'],'Axe':['Body Spray'],'Fogg':['Perfume']
+};
+
+// ── Fetch Helper (calls server.js) ───────────────────────────
+async function api(method, path, body = null) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch('/api' + path, opts);
+  const data = await res.json();
+  if (!res.ok || data.ok === false) throw new Error(data.error || 'API Error');
+  return data;
+}
+const GET    = (p)    => api('GET',    p);
+const POST   = (p, b) => api('POST',   p, b);
+const PATCH  = (p, b) => api('PATCH',  p, b);
+const DELETE = (p)    => api('DELETE', p);
+
+// ── Connection check ─────────────────────────────────────────
+async function checkConn() {
+  try {
+    await fetch('/api/token-check');
+    document.getElementById('conn-dot').classList.add('on');
+    document.getElementById('conn-lbl').textContent = 'Connected';
+    document.getElementById('conn-lbl').style.color = 'var(--accent)';
+  } catch {
+    document.getElementById('conn-lbl').textContent = 'Server offline';
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+//  DASHBOARD
+// ════════════════════════════════════════════════════════════
+async function loadDashboard() {
+  showLoader('Loading dashboard...');
+  try {
+    const res = await fetch('/api-stats/dashboard');
+    const d   = await res.json();
+    if (!d.ok) throw new Error(d.error);
+    CACHE.products  = d.products;
+    CACHE.customers = d.customers;
+    CACHE.suppliers = d.suppliers;
+    document.getElementById('d-prod').textContent = d.products.length;
+    document.getElementById('d-cust').textContent = d.customers.length;
+    document.getElementById('d-supp').textContent = d.suppliers.length;
+    document.getElementById('d-sale').textContent = d.sales.length;
+    document.getElementById('dash-tbl').innerHTML = d.products.slice(0,8).map(r => {
+      const stk = parseInt(r.Stock_Quantity)||0, ror = parseInt(r.Reorder_Level)||10;
+      return `<tr><td class="mono">${r.Product_ID||'—'}</td><td>${r.Category||'—'}</td><td>${r.Brand||'—'}</td>
+        <td style="font-weight:500;color:var(--text)">${r.Product_Name||'—'}</td>
+        <td class="mono">₹${r.Selling_Price||0}</td>
+        <td><span class="badge ${stk<ror?'badge-red':'badge-green'}">${stk}</span></td></tr>`;
+    }).join('') || `<tr><td colspan="6"><div class="empty"><div class="empty-ico">📦</div><p>No products yet</p></div></td></tr>`;
+    toast('Dashboard loaded!', 'ok');
+  } catch (e) { toast('Dashboard error: ' + e.message, 'err'); } finally { hideLoader(); }
+}
+
+// ════════════════════════════════════════════════════════════
+//  PRODUCTS
+// ════════════════════════════════════════════════════════════
+let editRecordId = null;
+let allProducts  = [];
+
+async function loadProducts() {
+  showLoader('Loading products from Zoho Creator...');
+  try {
+    const d = await GET('/product');
+    CACHE.products = d.data; allProducts = d.data;
+    renderProdTable(d.data);
+    toast(`${d.count} products loaded`, 'ok');
+  } catch (e) { toast('Error: ' + e.message, 'err'); } finally { hideLoader(); }
+}
+
+function renderProdTable(rows) {
+  document.getElementById('prod-tbl').innerHTML = rows.length ? rows.map(r => {
+    const stk = parseInt(r.Stock_Quantity)||0, ror = parseInt(r.Reorder_Level)||10;
+    return `<tr>
+      <td class="mono">${r.Product_ID||'—'}</td><td>${r.Category||'—'}</td><td>${r.Brand||'—'}</td>
+      <td style="font-weight:500;color:var(--text)">${r.Product_Name||'—'}</td>
+      <td class="mono">₹${r.Cost_Price||0}</td><td class="mono">₹${r.Selling_Price||0}</td>
+      <td>${stk<ror?`<span class="badge badge-red">⚠ ${stk}</span>`:`<span class="badge badge-green">${stk}</span>`}</td>
+      <td class="mono">${ror}</td>
+      <td style="display:flex;gap:5px">
+        <button class="icon-btn" onclick="editProduct('${r.ID}')">✏️</button>
+        <button class="icon-btn" onclick="askDelete('${r.ID}','${r.Product_Name||'Product'}','product')">🗑️</button>
+      </td></tr>`;
+  }).join('') : `<tr><td colspan="9"><div class="empty"><div class="empty-ico">📦</div><p>No products in Zoho Creator</p></div></td></tr>`;
+}
+
+function filterProducts(v) {
+  const tv = v.toLowerCase();
+  renderProdTable(allProducts.filter(r => (r.Product_Name||'').toLowerCase().includes(tv) || (r.Brand||'').toLowerCase().includes(tv)));
+}
+
+function openProductModal(id = null) {
+  editRecordId = id;
+  document.getElementById('pm-title').textContent = id ? 'Edit Product' : 'Add Product → Zoho Creator';
+  document.getElementById('pm-status').style.display = 'none';
+  document.getElementById('pm-btn').disabled = false;
+  if (!id) {
+    ['p-cat','p-brand','p-name'].forEach(i => { document.getElementById(i).value = ''; });
+    document.getElementById('p-brand').innerHTML = '<option value="">Select Brand</option>';
+    document.getElementById('p-name').innerHTML  = '<option value="">Select Product</option>';
+    ['p-cost','p-sell','p-stock','p-reorder'].forEach(i => document.getElementById(i).value = '');
+  } else {
+    const r = allProducts.find(p => p.ID === id);
+    if (r) {
+      document.getElementById('p-cat').value = r.Category || '';   onCatChange();
+      document.getElementById('p-brand').value = r.Brand || '';     onBrandChange();
+      document.getElementById('p-name').value  = r.Product_Name || '';
+      document.getElementById('p-cost').value  = r.Cost_Price || '';
+      document.getElementById('p-sell').value  = r.Selling_Price || '';
+      document.getElementById('p-stock').value = r.Stock_Quantity || '';
+      document.getElementById('p-reorder').value = r.Reorder_Level || '';
+    }
+  }
+  openModal('m-product');
+}
+
+function editProduct(id) { openProductModal(id); }
+
+async function saveProduct() {
+  const cat     = document.getElementById('p-cat').value;
+  const brand   = document.getElementById('p-brand').value;
+  const name    = document.getElementById('p-name').value;
+  const cost    = parseFloat(document.getElementById('p-cost').value) || 0;
+  const sell    = parseFloat(document.getElementById('p-sell').value) || 0;
+  const stock   = parseInt(document.getElementById('p-stock').value) || 0;
+  const reorder = parseInt(document.getElementById('p-reorder').value) || 10;
+
+  if (!name) { toast('Product Name select பண்ணுங்கள்!', 'err'); return; }
+
+  const payload = {
+    Category      : cat,
+    Brand         : brand,
+    Product_Name  : name,
+    Cost_Price    : cost,
+    Selling_Price : sell,
+    Stock_Quantity: stock,
+    Reorder_Level : reorder,
+  };
+
+  const btn = document.getElementById('pm-btn');
+  const sta = document.getElementById('pm-status');
+  btn.disabled = true;
+  btn.innerHTML = '<span style="width:14px;height:14px;border:2px solid rgba(0,0,0,.2);border-top-color:#04180E;border-radius:50%;display:inline-block;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px"></span>Saving to Zoho...';
+  sta.style.display = 'block';
+  sta.className = 'status-box info';
+  sta.innerHTML = '⏳ Zoho Creator-க்கு request அனுப்புகிறோம்...<br><small>Fields: ' + Object.keys(payload).join(', ') + '</small>';
+
+  try {
+    let result;
+    if (editRecordId) {
+      result = await PATCH('/product/' + editRecordId, payload);
+      sta.className = 'status-box ok';
+      sta.innerHTML = '✅ Product updated in Zoho Creator! Record ID: ' + editRecordId;
+      toast('"' + name + '" updated!', 'ok');
+    } else {
+      result = await POST('/product', payload);
+      sta.className = 'status-box ok';
+      sta.innerHTML = '✅ <b>' + name + '</b> added to Zoho Creator!<br>'
+        + '<small>New Record ID: <b>' + (result.data || '— (check terminal)') + '</b></small><br>'
+        + '<small style="opacity:.7">💡 Terminal-ல் full Zoho response பார்க்கலாம்</small>';
+      toast('✅ "' + name + '" added to Zoho!', 'ok');
+    }
+    setTimeout(function() { closeModal('m-product'); loadProducts(); }, 2000);
+
+  } catch (e) {
+    sta.className = 'status-box err';
+    sta.innerHTML = '❌ <b>Add failed!</b><br>'
+      + '<span style="font-size:12px;color:#fca5a5">' + e.message + '</span><br><br>'
+      + '<b style="font-size:11px">Common fixes:</b>'
+      + '<ul style="font-size:11px;margin:4px 0 0 16px;line-height:1.8">'
+      + '<li>Terminal-ல் Zoho error code பாருங்கள்</li>'
+      + '<li>Token expired → server restart பண்ணுங்கள்</li>'
+      + '<li><a href="/api/debug/product" target="_blank" style="color:#0EA5E9">🔍 Debug test (Terminal-ல் full response)</a></li>'
+      + '</ul>';
+    toast('❌ ' + e.message.substring(0, 60), 'err');
+    console.error('saveProduct error:', e.message);
+
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '📤 Save to Zoho Creator';
+  }
+}
+
+function onCatChange() {
+  const cat = document.getElementById('p-cat').value;
+  document.getElementById('p-brand').innerHTML = '<option value="">Select Brand</option>' + (BRAND_MAP[cat]||[]).map(b=>`<option>${b}</option>`).join('');
+  document.getElementById('p-name').innerHTML  = '<option value="">Select Product</option>';
+}
+function onBrandChange() {
+  const brand = document.getElementById('p-brand').value;
+  document.getElementById('p-name').innerHTML = '<option value="">Select Product</option>' + (PROD_MAP[brand]||[]).map(n=>`<option>${n}</option>`).join('');
+}
+
+// ════════════════════════════════════════════════════════════
+//  CUSTOMERS
+// ════════════════════════════════════════════════════════════
+async function loadCustomers() {
+  showLoader('Loading customers...');
+  try {
+    const d = await GET('/customer');
+    CACHE.customers = d.data;
+    document.getElementById('cust-tbl').innerHTML = d.data.length ? d.data.map(r =>
+      `<tr><td class="mono">${r.ID||'—'}</td><td style="font-weight:500;color:var(--text)">${r.Customer_Name||'—'}</td>
+      <td class="mono">${r.Phone||'—'}</td>
+      <td><button class="icon-btn" onclick="askDelete('${r.ID}','${r.Customer_Name||'Customer'}','customer')">🗑️</button></td></tr>`
+    ).join('') : `<tr><td colspan="4"><div class="empty"><div class="empty-ico">👥</div><p>No customers</p></div></td></tr>`;
+    toast(`${d.count} customers loaded`, 'ok');
+  } catch (e) { toast('Error: ' + e.message, 'err'); } finally { hideLoader(); }
+}
+function openCustomerModal() {
+  document.getElementById('c-name').value = ''; document.getElementById('c-phone').value = '';
+  openModal('m-customer');
+}
+async function saveCustomer() {
+  const name = document.getElementById('c-name').value.trim();
+  if (!name) { toast('Name enter பண்ணுங்கள்!', 'err'); return; }
+  showLoader('Adding customer...');
+  try {
+    await POST('/customer', { Customer_Name: name, Phone: document.getElementById('c-phone').value });
+    toast(`"${name}" added to Zoho!`, 'ok'); closeModal('m-customer'); loadCustomers();
+  } catch (e) { toast('Error: ' + e.message, 'err'); } finally { hideLoader(); }
+}
+
+// ════════════════════════════════════════════════════════════
+//  SUPPLIERS
+// ════════════════════════════════════════════════════════════
+async function loadSuppliers() {
+  showLoader('Loading suppliers...');
+  try {
+    const d = await GET('/supplier');
+    CACHE.suppliers = d.data;
+    document.getElementById('supp-tbl').innerHTML = d.data.length ? d.data.map(r =>
+      `<tr><td class="mono">${r.Supplier_ID||r.ID||'—'}</td><td style="font-weight:500;color:var(--text)">${r.Supplier_Name||'—'}</td>
+      <td>${r.Address_district_city||'—'}</td><td>${r.Address_state_province||'—'}</td>
+      <td><button class="icon-btn" onclick="askDelete('${r.ID}','${r.Supplier_Name||'Supplier'}','supplier')">🗑️</button></td></tr>`
+    ).join('') : `<tr><td colspan="5"><div class="empty"><div class="empty-ico">🚚</div><p>No suppliers</p></div></td></tr>`;
+    toast(`${d.count} suppliers loaded`, 'ok');
+  } catch (e) { toast('Error: ' + e.message, 'err'); } finally { hideLoader(); }
+}
+function openSupplierModal() {
+  ['s-name','s-phone','s-addr','s-city','s-state'].forEach(i => document.getElementById(i).value = '');
+  openModal('m-supplier');
+}
+async function saveSupplier() {
+  const name = document.getElementById('s-name').value.trim();
+  if (!name) { toast('Supplier name enter பண்ணுங்கள்!', 'err'); return; }
+  showLoader('Adding supplier...');
+  try {
+    await POST('/supplier', {
+      Supplier_Name: name,
+      Address: { address_line_1: document.getElementById('s-addr').value, district_city: document.getElementById('s-city').value, state_province: document.getElementById('s-state').value }
+    });
+    toast(`"${name}" added to Zoho!`, 'ok'); closeModal('m-supplier'); loadSuppliers();
+  } catch (e) { toast('Error: ' + e.message, 'err'); } finally { hideLoader(); }
+}
+
+// ════════════════════════════════════════════════════════════
+//  PURCHASE
+// ════════════════════════════════════════════════════════════
+async function loadPurchases() {
+  showLoader('Loading purchases...');
+  try {
+    const d = await GET('/purchase');
+    document.getElementById('pu-tbl').innerHTML = d.data.length ? d.data.map(r =>
+      `<tr><td class="mono">#${r.Purchase_ID||r.ID||'—'}</td><td>${r.Supplier||'—'}</td><td class="mono">${r.Purchase_Date||'—'}</td>
+      <td class="mono">₹${r.Amount||0}</td><td><span class="badge badge-blue">${r.Payment_Method||'—'}</span></td>
+      <td><button class="icon-btn" onclick="askDelete('${r.ID}','Purchase #${r.Purchase_ID||r.ID}','purchase')">🗑️</button></td></tr>`
+    ).join('') : `<tr><td colspan="6"><div class="empty"><div class="empty-ico">🛍️</div><p>No purchases</p></div></td></tr>`;
+    toast(`${d.count} purchases loaded`, 'ok');
+  } catch (e) { toast('Error: ' + e.message, 'err'); } finally { hideLoader(); }
+}
+function openPurchaseModal() {
+  document.getElementById('pu-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('pu-rows').innerHTML = ''; document.getElementById('pu-total').textContent = '0.00';
+  const sel = document.getElementById('pu-sup');
+  sel.innerHTML = '<option value="">Select Supplier</option>' + CACHE.suppliers.map(s => `<option value="${s.Supplier_Name||s.ID}">${s.Supplier_Name}</option>`).join('');
+  addPuRow(); openModal('m-purchase');
+}
+function addPuRow() {
+  const opts = CACHE.products.map(p => `<option value="${p.ID}" data-cost="${p.Cost_Price||0}">${p.Product_Name}</option>`).join('');
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td><select onchange="onPuSel(this)" style="min-width:140px"><option value="">Select</option>${opts}</select></td>
+    <td><input type="number" min="1" value="1" style="width:62px" oninput="calcPu()"></td>
+    <td><input type="number" min="0" step="0.01" placeholder="0.00" style="width:90px" oninput="calcPu()"></td>
+    <td><input type="number" readonly style="width:90px;background:var(--card);color:var(--accent)" value="0.00"></td>
+    <td><button class="rem-row" onclick="this.closest('tr').remove();calcPu()">✕</button></td>`;
+  document.getElementById('pu-rows').appendChild(tr);
+}
+function onPuSel(s) { s.closest('tr').querySelectorAll('input')[1].value = parseFloat(s.selectedOptions[0].dataset.cost||0).toFixed(2); calcPu(); }
+function calcPu() {
+  let tot = 0;
+  document.querySelectorAll('#pu-rows tr').forEach(r => { const i = r.querySelectorAll('input'); if(i.length<3)return; const t=(parseFloat(i[0].value)||0)*(parseFloat(i[1].value)||0); i[2].value=t.toFixed(2); tot+=t; });
+  document.getElementById('pu-total').textContent = tot.toFixed(2);
+}
+async function savePurchase() {
+  const supplier = document.getElementById('pu-sup').value, date = document.getElementById('pu-date').value, payment = document.getElementById('pu-pay').value;
+  const items = []; let total = 0;
+  document.querySelectorAll('#pu-rows tr').forEach(r => { const s=r.querySelector('select'),i=r.querySelectorAll('input'); if(!s||!s.value)return; const t=parseFloat(i[2].value)||0; total+=t; items.push({Product:s.value,Quantity:parseFloat(i[0].value)||0,Cost_Price:parseFloat(i[1].value)||0,Total_Price:t}); });
+  if(!items.length){toast('Item add பண்ணுங்கள்!','err');return;}
+  showLoader('Saving to Zoho...');
+  try {
+    await POST('/purchase', { Supplier:supplier, Purchase_Date:date, Payment_Method:payment, Amount:total, Purchase_Items:items });
+    toast('Purchase saved! Stock updated via Zoho workflow.','ok'); closeModal('m-purchase'); loadPurchases();
+  } catch(e){toast('Error: '+e.message,'err');} finally{hideLoader();}
+}
+
+// ════════════════════════════════════════════════════════════
+//  SALES
+// ════════════════════════════════════════════════════════════
+async function loadSales() {
+  showLoader('Loading sales...');
+  try {
+    const d = await GET('/sales');
+    document.getElementById('sl-tbl').innerHTML = d.data.length ? d.data.map(r =>
+      `<tr><td class="mono">#${r.Bill_ID||r.ID||'—'}</td><td>${r.Customer1||'Walk-in'}</td><td class="mono">${r.Date_field||'—'}</td>
+      <td class="mono">₹${r.Total_Amount||0}</td><td class="mono" style="color:var(--warning)">₹${r.Discount_Amount||0}</td>
+      <td class="mono" style="color:var(--accent)">₹${r.Grand_Total||0}</td>
+      <td><span class="badge badge-blue">${r.Payment_Method||'—'}</span></td>
+      <td><span class="badge badge-green">${r.Payment_Status||'Paid'}</span></td>
+      <td><button class="icon-btn" onclick="askDelete('${r.ID}','Bill #${r.Bill_ID||r.ID}','sales')">🗑️</button></td></tr>`
+    ).join('') : `<tr><td colspan="9"><div class="empty"><div class="empty-ico">💰</div><p>No sales</p></div></td></tr>`;
+    toast(`${d.count} sales loaded`, 'ok');
+  } catch(e){toast('Error: '+e.message,'err');} finally{hideLoader();}
+}
+function openSalesModal() {
+  document.getElementById('sl-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('sl-rows').innerHTML = ''; document.getElementById('sl-disc').value = '0';
+  document.getElementById('sl-sub').textContent = '0.00'; document.getElementById('sl-grand').textContent = '0.00';
+  const sel = document.getElementById('sl-cust');
+  sel.innerHTML = '<option value="">Walk-in Customer</option>' + CACHE.customers.map(c=>`<option value="${c.Customer_Name||c.ID}">${c.Customer_Name}</option>`).join('');
+  addSlRow(); openModal('m-sales');
+}
+function addSlRow() {
+  const opts = CACHE.products.map(p => `<option value="${p.ID}" data-sell="${p.Selling_Price||0}">${p.Product_Name} (₹${p.Selling_Price||0})</option>`).join('');
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td><select onchange="onSlSel(this)" style="min-width:150px"><option value="">Select</option>${opts}</select></td>
+    <td><input type="number" min="1" value="1" style="width:58px" oninput="calcSales()"></td>
+    <td><input type="number" min="0" step="0.01" placeholder="0.00" style="width:90px" oninput="calcSales()"></td>
+    <td><input type="number" readonly style="width:90px;background:var(--card);color:var(--accent)" value="0.00"></td>
+    <td><button class="rem-row" onclick="this.closest('tr').remove();calcSales()">✕</button></td>`;
+  document.getElementById('sl-rows').appendChild(tr);
+}
+function onSlSel(s) { s.closest('tr').querySelectorAll('input')[1].value = parseFloat(s.selectedOptions[0].dataset.sell||0).toFixed(2); calcSales(); }
+function calcSales() {
+  let sub = 0;
+  document.querySelectorAll('#sl-rows tr').forEach(r => { const i=r.querySelectorAll('input');if(i.length<3)return;const t=(parseFloat(i[0].value)||0)*(parseFloat(i[1].value)||0);i[2].value=t.toFixed(2);sub+=t; });
+  const disc = parseFloat(document.getElementById('sl-disc').value)||0;
+  document.getElementById('sl-sub').textContent = sub.toFixed(2);
+  document.getElementById('sl-grand').textContent = Math.max(0,sub-disc).toFixed(2);
+}
+async function saveSale() {
+  const customer=document.getElementById('sl-cust').value, date=document.getElementById('sl-date').value, payment=document.getElementById('sl-pay').value, discount=parseFloat(document.getElementById('sl-disc').value)||0;
+  const items=[]; let total=0;
+  document.querySelectorAll('#sl-rows tr').forEach(r=>{const s=r.querySelector('select'),i=r.querySelectorAll('input');if(!s||!s.value)return;const t=parseFloat(i[2].value)||0;total+=t;items.push({Product:s.value,Quantity:parseFloat(i[0].value)||0,Selling_Price:parseFloat(i[1].value)||0,Total_Price:t});});
+  if(!items.length){toast('Item add பண்ணுங்கள்!','err');return;}
+  const grand=Math.max(0,total-discount);
+  showLoader('Creating bill in Zoho...');
+  try {
+    await POST('/sales',{Customer1:customer||'Walk-in',Date_field:date,Payment_Method:payment,Payment_Status:'Paid 👍',Total_Amount:total,Discount_Amount:discount,Grand_Total:grand,Sales_Items:items});
+    toast(`Bill created! Grand Total: ₹${grand.toFixed(2)}`,'ok'); closeModal('m-sales'); loadSales();
+  } catch(e){toast('Error: '+e.message,'err');} finally{hideLoader();}
+}
+
+// ════════════════════════════════════════════════════════════
+//  DELETE
+// ════════════════════════════════════════════════════════════
+let delInfo = null;
+function askDelete(id, name, entity) { delInfo={id,entity}; document.getElementById('del-name').textContent=name; openModal('m-del'); }
+async function doDelete() {
+  if(!delInfo)return; const{id,entity}=delInfo; closeModal('m-del');
+  showLoader('Deleting from Zoho...');
+  try {
+    await DELETE(`/${entity}/${id}`);
+    toast('Deleted from Zoho Creator!','ok');
+    const loaders={product:loadProducts,customer:loadCustomers,supplier:loadSuppliers,sales:loadSales,purchase:loadPurchases};
+    if(loaders[entity])loaders[entity]();
+  } catch(e){toast('Delete failed: '+e.message,'err');} finally{hideLoader();delInfo=null;}
+}
+
+// ════════════════════════════════════════════════════════════
+//  NAVIGATION
+// ════════════════════════════════════════════════════════════
+function go(page) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>{if(n.getAttribute('onclick')&&n.getAttribute('onclick').includes("'"+page+"'"))n.classList.add('active');});
+  const loaders={dashboard:loadDashboard,products:loadProducts,purchase:loadPurchases,sales:loadSales,customers:loadCustomers,suppliers:loadSuppliers};
+  if(loaders[page])loaders[page]();
+}
+
+// ════════════════════════════════════════════════════════════
+//  UI UTILS
+// ════════════════════════════════════════════════════════════
+function openModal(id){document.getElementById(id).classList.add('open')}
+function closeModal(id){document.getElementById(id).classList.remove('open')}
+document.querySelectorAll('.overlay').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open')}));
+function showLoader(t='Loading...'){document.getElementById('loader-txt').textContent=t;document.getElementById('loader').classList.add('show')}
+function hideLoader(){document.getElementById('loader').classList.remove('show')}
+function toast(msg,type='info'){
+  const el=document.createElement('div'); el.className=`toast ${type}`; const icons={ok:'✓',err:'✕',info:'ℹ',warn:'⚠'};
+  el.innerHTML=`<span>${icons[type]||'ℹ'}</span>${msg}`; document.getElementById('toasts').appendChild(el);
+  setTimeout(()=>{el.style.opacity='0';el.style.transform='translateX(100%)';el.style.transition='all .3s';setTimeout(()=>el.remove(),300);},3500);
+}
+
+// ════════════════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  checkConn();
+  loadDashboard();
+  document.getElementById('sl-disc').addEventListener('input', calcSales);
+});
+</script>
+</body>
+</html>
